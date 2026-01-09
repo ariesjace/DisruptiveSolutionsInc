@@ -29,7 +29,7 @@ const BRANDS_CONFIG = [
     name: "ZUMTOBEL",
     logo: "https://disruptivesolutionsinc.com/wp-content/uploads/2025/11/ZUMTOBELs.png",
     description: "Global leader in holistic lighting solutions for professional applications.",
-     bgColor: "bg-[#f9f9f9]",
+    bgColor: "bg-[#f9f9f9]",
     accentColor: "text-[#d11a2a]",
   },
   {
@@ -37,7 +37,7 @@ const BRANDS_CONFIG = [
     name: "LIT",
     logo: "https://disruptivesolutionsinc.com/wp-content/uploads/2025/08/Lit-Rectangle-black-scaled-e1754460691526.png",
     description: "Architectural lighting for modern, energy-efficient environments.",
-        bgColor: "bg-[#f9f9f9]",
+    bgColor: "bg-[#ffffff]",
     accentColor: "text-blue-600",
   }
 ];
@@ -45,13 +45,13 @@ const BRANDS_CONFIG = [
 export default function BrandsShowcase() {
   const [brandProducts, setBrandProducts] = useState<any>({});
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isNavOpen, setIsNavOpen] = useState(false); // Mobile Nav Toggle
+  const [isNavOpen, setIsNavOpen] = useState(false);
   const LOGO_RED = "https://disruptivesolutionsinc.com/wp-content/uploads/2025/08/DISRUPTIVE-LOGO-red-scaled.png";
   const LOGO_WHITE = "https://disruptivesolutionsinc.com/wp-content/uploads/2025/08/DISRUPTIVE-LOGO-white-scaled.png";
 
   const navLinks = [
     { name: "Home", href: "/" },
-    { name: "Products", href: "/lighting-products-smart-solutions" },
+    { name: "Products & Solutions", href: "/lighting-products-smart-solutions" },
     { name: "Brands", href: "/trusted-technology-brands" },
     { name: "Contact", href: "/contact-us" },
   ];
@@ -98,95 +98,118 @@ export default function BrandsShowcase() {
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-slate-900 overflow-x-hidden">
       
-      {/* --- 1. NAVIGATION (FROSTED GLASS / MALIWANAG STYLE) --- */}
+      {/* --- 1. NAVIGATION --- */}
       <nav className="fixed top-0 left-0 w-full z-[1000] py-4 transition-all duration-500">
-        {/* Background Layer: Dito ang "Maliwanag" effect */}
         <motion.div
           initial={false}
           animate={{
-            // Kapag scrolled: maputi na semi-transparent (parang frosted glass)
-            // Kapag hindi scrolled: full transparent
-            backgroundColor: isScrolled ? "rgba(255, 255, 255, 0.75)" : "rgba(255, 255, 255, 0)",
-            backdropFilter: isScrolled ? "blur(16px)" : "blur(0px)",
+            backgroundColor: isScrolled ? "rgba(255, 255, 255, 0.85)" : "rgba(255, 255, 255, 0)",
+            backdropFilter: isScrolled ? "blur(20px)" : "blur(0px)",
             boxShadow: isScrolled ? "0 4px 30px rgba(0, 0, 0, 0.05)" : "0 0px 0px rgba(0, 0, 0, 0)",
-            borderBottom: isScrolled ? "1px solid rgba(255, 255, 255, 0.3)" : "1px solid rgba(255, 255, 255, 0)",
-            height: isScrolled ? "70px" : "90px", // Nababawasan ang taas pag nag-scroll
+            height: isScrolled ? "70px" : "90px",
           }}
           className="absolute inset-0 transition-all duration-500"
         />
 
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between relative z-10 h-full">
+          <Link href="/">
+            <motion.img
+              animate={{ scale: isScrolled ? 0.85 : 1 }}
+              src={isScrolled ? LOGO_RED : LOGO_WHITE}
+              alt="Logo"
+              className="h-12 w-auto object-contain transition-all duration-500"
+            />
+          </Link>
 
-          {/* LOGO */}
-          <div className="relative">
-            <Link href="/">
-              <motion.img
-                animate={{ scale: isScrolled ? 0.85 : 1 }}
-                // Dahil maliwanag ang BG, RED logo ang gagamitin natin pag scrolled para kita agad
-                src={isScrolled ? LOGO_RED : LOGO_WHITE}
-                alt="Logo"
-                className="h-12 w-auto object-contain transition-all duration-500"
-              />
-            </Link>
-          </div>
-
-          {/* THE COMPACT "MAGDIDIKIT" MENU (White/Glass Style) */}
           <motion.div
             initial={false}
             animate={{
-              gap: isScrolled ? "2px" : "12px",
-              // Mas madilim ng konti ang capsule pag malinaw ang main nav bg
+              gap: isScrolled ? "4px" : "12px",
               backgroundColor: isScrolled ? "rgba(0, 0, 0, 0.03)" : "rgba(255, 255, 255, 0.15)",
-              paddingLeft: isScrolled ? "6px" : "16px",
-              paddingRight: isScrolled ? "6px" : "16px",
               border: isScrolled ? "1px solid rgba(0, 0, 0, 0.05)" : "1px solid rgba(255, 255, 255, 0.2)",
             }}
-            className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center py-1.5 rounded-full transition-all duration-500 ease-in-out"
+            className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center py-1.5 px-4 rounded-full transition-all duration-500"
           >
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 href={link.href}
-                className={`px-5 py-2 text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-500 rounded-full relative group ${isScrolled ? "text-gray-900" : "text-white"
-                  }`}
+                className={`px-5 py-2 text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-500 rounded-full relative group ${
+                  isScrolled ? "text-gray-900" : "text-white"
+                }`}
               >
-                {/* Sliding Red Hover Effect */}
-                <motion.span
-                  className="absolute inset-0 bg-[#d11a2a] rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100"
-                />
-                <span className="relative z-10 group-hover:text-white transition-colors">
-                  {link.name}
-                </span>
+                <motion.span className="absolute inset-0 bg-[#d11a2a] rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100" />
+                <span className="relative z-10 group-hover:text-white transition-colors">{link.name}</span>
               </Link>
             ))}
           </motion.div>
 
-          {/* RIGHT SIDE BUTTON */}
           <div className="hidden lg:block">
-            <motion.div animate={{ scale: isScrolled ? 0.9 : 1 }}>
-              <Link
-                href="/quote"
-                className={`px-7 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all duration-500 shadow-xl ${isScrolled
-                  ? "bg-[#d11a2a] text-white shadow-red-500/20"
-                  : "bg-white text-gray-900"
-                  }`}
-              >
-                Free Quote
-              </Link>
-            </motion.div>
+            <Link
+              href="/quote"
+              className={`px-7 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all duration-500 shadow-xl ${
+                isScrolled ? "bg-[#d11a2a] text-white" : "bg-white text-gray-900"
+              }`}
+            >
+              Free Quote
+            </Link>
           </div>
 
-          {/* MOBILE TOGGLE ICON */}
           <button className="lg:hidden p-2" onClick={() => setIsNavOpen(true)}>
             <Menu className={isScrolled ? "text-gray-900" : "text-white"} size={28} />
           </button>
         </div>
       </nav>
 
-      {/* --- MAIN CONTENT --- */}
-      <main className="flex-grow w-full pt-[90px]">
+      {/* --- 2. NEW DISRUPTIVE HERO SECTION --- */}
+      <section className="relative h-[70vh] w-full flex items-center justify-center overflow-hidden bg-[#050505]">
+        <motion.div 
+          initial={{ scale: 1.1 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 1.5 }}
+          className="absolute inset-0 z-0"
+        >
+          <img 
+            src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80" 
+            className="w-full h-full object-cover opacity-40 brightness-50" 
+            alt="Hero Background"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-white" />
+          <motion.div 
+            animate={{ opacity: [0.1, 0.3, 0.1] }}
+            transition={{ duration: 6, repeat: Infinity }}
+            className="absolute -top-1/4 -right-1/4 w-[600px] h-[600px] bg-[#d11a2a]/20 blur-[120px] rounded-full"
+          />
+        </motion.div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-6 w-full text-center md:text-left">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1 }}
+          >
+            <span className="bg-[#d11a2a] text-white text-[9px] font-black uppercase tracking-[0.5em] px-5 py-2 rounded-sm mb-6 inline-block">
+              Premium Partnerships
+            </span>
+            <h1 className="text-white text-6xl md:text-[8rem] font-black uppercase tracking-tighter leading-[0.85] italic mb-6">
+              THE BRANDS<br/>
+              <span className="text-transparent stroke-white" style={{ WebkitTextStroke: "1px white" }}>WE TRUST</span>
+            </h1>
+            <p className="text-gray-400 text-sm md:text-base max-w-xl font-bold uppercase tracking-[0.2em] leading-relaxed mx-auto md:mx-0">
+              Curating the world's most <span className="text-white">advanced lighting technologies</span> for high-stakes environments.
+            </p>
+          </motion.div>
+        </div>
+
+        <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 2, repeat: Infinity }} className="absolute bottom-10 left-1/2 -translate-x-1/2">
+            <div className="w-[1px] h-16 bg-gradient-to-b from-[#d11a2a] to-transparent" />
+        </motion.div>
+      </section>
+
+      {/* --- 3. MAIN CONTENT (BRAND SHOWCASE) --- */}
+      <main className="flex-grow w-full relative z-20">
         {BRANDS_CONFIG.map((brand) => (
-          <section key={brand.id} className={`w-full py-18 border-b border-gray-50 ${brand.bgColor} flex items-center justify-center`}>
+          <section key={brand.id} className={`w-full py-24 border-b border-gray-50 ${brand.bgColor} flex items-center justify-center`}>
             <div className="max-w-[1400px] w-full px-8 md:px-12">
               <div className="flex flex-col lg:flex-row gap-20 items-center">
                 
@@ -269,7 +292,7 @@ export default function BrandsShowcase() {
         ))}
       </main>
 
-      {/* --- 5. FOOTER --- */}
+      {/* --- 4. FOOTER --- */}
       <footer className="bg-[#0a0a0a] text-white pt-32 pb-12 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-20 mb-24">
@@ -307,8 +330,8 @@ export default function BrandsShowcase() {
                 <h4 className="text-2xl font-black uppercase tracking-tighter mb-4">Newsletter</h4>
                 <p className="text-gray-400 text-sm mb-8 max-w-sm">Get exclusive engineering insights and smart solution updates.</p>
                 <div className="flex bg-black/40 p-2 rounded-2xl border border-white/10 focus-within:border-[#d11a2a]/50 transition-all">
-                  <input type="email" placeholder="Business Email" className="bg-transparent flex-1 px-4 py-2 text-sm outline-none" />
-                  <button className="bg-[#d11a2a] px-6 py-3 rounded-xl hover:bg-white hover:text-black transition-all group/btn flex items-center gap-2">
+                  <input type="email" placeholder="Business Email" className="bg-transparent flex-1 px-4 py-2 text-sm outline-none text-white" />
+                  <button className="bg-[#d11a2a] px-6 py-3 rounded-xl hover:bg-white hover:text-black transition-all group/btn flex items-center gap-2 text-white">
                     <span className="text-[10px] font-black uppercase tracking-widest">Join</span>
                     <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
                   </button>

@@ -29,14 +29,28 @@ const data = {
       items: [
         { title: "All Product", url: "#" },
         { title: "Add new product", url: "#" },
-        { 
-          title: "Inquiries", 
-          url: "#",      // <--- Dagdagan nito
-          icon: Inbox     // <--- Gagana na ito dahil sa change sa NavMain
-        },
+        { title: "Orders", url: "#" },
       ],
-    },
-    // ... ibang menu items mo
+    }, 
+{
+  title: "Pages",
+  url: "#",
+  icon: BookOpen,
+  items: [
+    { title: "All Blogs", url: "#" }, // <--- Dapat sakto ang "All Blogs" dito
+    { title: "Careers", url: "#" },
+  ],
+},
+{
+  title: "Inquiries",
+  url: "#",
+  icon: BookOpen,
+  items: [
+    { title: "Customer Inquiries", url: "#", icon: Inbox },
+    { title: "Quotation", url: "#", icon: Inbox },
+    { title: "Job Application", url: "#", icon: Inbox },
+  ],
+},
   ],
   projects: [
     { name: "Design Engineering", url: "#", icon: Frame },

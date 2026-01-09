@@ -5,7 +5,13 @@ import { useState } from "react"
 import { AppSidebar } from "../components/app-sidebar"
 import { AllProducts } from "../components/products/AllProducts"
 import AddNewProduct from "../components/products/AddnewProduct"
-import InquiriesPanel from "../components/products/InquiriesPanel"
+import InquiriesPanel from "../components/inquiries/QuoteInquiries"
+import CareersManager from "../components/pages/CareersManager"
+import BlogManager from "../components/pages/BlogManager" 
+// 1. I-IMPORT ANG APPLICATION INQUIRIES
+import ApplicationInquiries from "../components/inquiries/JobApplication"
+import CustomerInquiries from "../components/inquiries/CustomerInquiries" 
+import Quotation from "../components/inquiries/Quotation" 
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -20,26 +26,42 @@ import {
 } from "@/components/ui/sidebar"
 
 export default function Page() {
-  // Eto ang state na titingin kung ano ang dapat i-render
-  const [activeView, setActiveView] = useState("all-products")
+  const [activeView, setActiveView] = useState("All Product")
 
-  // Function para i-render ang tamang component base sa state
   const renderContent = () => {
     switch (activeView) {
       case "All Product":
         return <AllProducts />
-      case "Inquiries": // <--- Idagdag ito
-      return <InquiriesPanel />
+      
+      // MGA INQUIRIES SECTION
+      case "Orders": // Dating "Inquiries"
+        return <InquiriesPanel />
+
+      case "Job Application": // Ito yung bago nating ginawa
+        return <ApplicationInquiries />
+
       case "Add new product":
         return <AddNewProduct />
+
+      case "Quotation":
+        return <Quotation />
+      // PAGES SECTION
+      case "Careers": 
+        return <CareersManager />
+
+      case "Customer Inquiries": 
+        return <CustomerInquiries />
+
+      case "All Blogs": 
+        return <BlogManager />
+      
       default:
-        return <AllProducts /> // Default view
+        return <AllProducts />
     }
   }
 
   return (
     <SidebarProvider>
-      {/* Ipasa ang setActiveView sa Sidebar */}
       <AppSidebar onNavigate={(view) => setActiveView(view)} />
       
       <SidebarInset>
@@ -49,8 +71,8 @@ export default function Page() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbPage className="capitalize">
-                  {activeView.replace("-", " ")}
+                <BreadcrumbPage className="capitalize font-black italic tracking-tighter text-[#d11a2a]">
+                  {activeView}
                 </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
@@ -58,8 +80,7 @@ export default function Page() {
         </header>
 
         <div className="flex flex-1 flex-col gap-4 p-4">
-          {/* Dito lalabas ang Dashboard Components */}
-          <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 p-6 md:min-h-min">
+          <div className="min-h-[100vh] flex-1 rounded-[2rem] bg-white p-6 md:min-h-min shadow-sm border border-gray-100">
             {renderContent()}
           </div>
         </div>

@@ -1,399 +1,310 @@
 "use client";
-import {
-    Map,
-    MapMarker,
-    MapPopup,
-    MapTileLayer,
-    MapZoomControl,
-} from "@/components/ui/map"
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { 
-  Menu, Mail, Phone, MapPin, Send, ChevronUp, Sparkles, ArrowRight,
-  Facebook, Instagram, Linkedin, Video 
+import dynamic from "next/dynamic";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Menu, Mail, Phone, MapPin, Send, ChevronUp, Sparkles, ArrowRight,
+    Facebook, Instagram, Linkedin, X
 } from "lucide-react";
 
+// Firebase Imports
+import { db } from "@/lib/firebase"; 
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+
+// Dynamic Import para sa Map (Para iwas SSR errors sa Next.js)
+const Map = dynamic(() => import("@/components/ui/map").then(mod => mod.Map), { 
+    ssr: false,
+    loading: () => <div className="h-96 w-full bg-gray-100 animate-pulse rounded-[40px] flex items-center justify-center text-gray-400 font-bold uppercase tracking-widest text-xs">Loading Map...</div>
+});
+const MapMarker = dynamic(() => import("@/components/ui/map").then(mod => mod.MapMarker), { ssr: false });
+const MapPopup = dynamic(() => import("@/components/ui/map").then(mod => mod.MapPopup), { ssr: false });
+const MapTileLayer = dynamic(() => import("@/components/ui/map").then(mod => mod.MapTileLayer), { ssr: false });
+const MapZoomControl = dynamic(() => import("@/components/ui/map").then(mod => mod.MapZoomControl), { ssr: false });
+
 export default function ContactUsPage() {
-    const [isNavOpen, setIsNavOpen] = useState(false); // Mobile Nav Toggle
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  const LOGO_RED = "https://disruptivesolutionsinc.com/wp-content/uploads/2025/08/DISRUPTIVE-LOGO-red-scaled.png";
-  const LOGO_WHITE = "https://disruptivesolutionsinc.com/wp-content/uploads/2025/08/DISRUPTIVE-LOGO-white-scaled.png";
-
-  const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "Product & Solutions", href: "/lighting-products-smart-solutions" },
-    { name: "Brands", href: "/trusted-technology-brands" },
-    { name: "Contact Us", href: "/contact-us" },
-  ];
-
-  const footerLinks = [
-    { name: "About Us", href: "/about" },
-    { name: "Blog", href: "/blog" },
-    { name: "Careers", href: "/careers" },
-    { name: "Contact Us", href: "/contact-us" },
-  ];
-
-  const socials = [
-    { icon: Facebook, href: "#", color: "hover:bg-[#1877F2]" },
-    { icon: Instagram, href: "#", color: "hover:bg-[#E4405F]" },
-    { icon: Linkedin, href: "#", color: "hover:bg-[#0A66C2]" },
-  ];
-
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  return (
-    <div className="min-h-screen bg-white font-sans selection:bg-[#d11a2a]/10 selection:text-[#d11a2a]">
-      
-{/* --- 1. NAVIGATION (FROSTED GLASS / MALIWANAG STYLE) --- */}
-<nav className="fixed top-0 left-0 w-full z-[1000] py-4 transition-all duration-500">
-  {/* Background Layer: Dito ang "Maliwanag" effect */}
-  <motion.div
-    initial={false}
-    animate={{
-      // Kapag scrolled: maputi na semi-transparent (parang frosted glass)
-      // Kapag hindi scrolled: full transparent
-      backgroundColor: isScrolled ? "rgba(255, 255, 255, 0.75)" : "rgba(255, 255, 255, 0)",
-      backdropFilter: isScrolled ? "blur(16px)" : "blur(0px)",
-      boxShadow: isScrolled ? "0 4px 30px rgba(0, 0, 0, 0.05)" : "0 0px 0px rgba(0, 0, 0, 0)",
-      borderBottom: isScrolled ? "1px solid rgba(255, 255, 255, 0.3)" : "1px solid rgba(255, 255, 255, 0)",
-      height: isScrolled ? "70px" : "90px", // Nababawasan ang taas pag nag-scroll
-    }}
-    className="absolute inset-0 transition-all duration-500"
-  />
-
-  <div className="max-w-7xl mx-auto px-6 flex items-center justify-between relative z-10 h-full">
+    // --- STATES ---
+    const [isNavOpen, setIsNavOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     
-    {/* LOGO */}
-    <div className="relative">
-      <Link href="/">
-        <motion.img 
-          animate={{ scale: isScrolled ? 0.85 : 1 }}
-          // Dahil maliwanag ang BG, RED logo ang gagamitin natin pag scrolled para kita agad
-          src={isScrolled ? LOGO_RED : LOGO_WHITE} 
-          alt="Logo" 
-          className="h-12 w-auto object-contain transition-all duration-500" 
-        />
-      </Link>
-    </div>
+    const [formData, setFormData] = useState({
+        fullName: "",
+        email: "",
+        phone: "",
+        message: ""
+    });
 
-    {/* THE COMPACT "MAGDIDIKIT" MENU (White/Glass Style) */}
-    <motion.div 
-      initial={false}
-      animate={{
-        gap: isScrolled ? "2px" : "12px",
-        // Mas madilim ng konti ang capsule pag malinaw ang main nav bg
-        backgroundColor: isScrolled ? "rgba(0, 0, 0, 0.03)" : "rgba(255, 255, 255, 0.15)",
-        paddingLeft: isScrolled ? "6px" : "16px",
-        paddingRight: isScrolled ? "6px" : "16px",
-        border: isScrolled ? "1px solid rgba(0, 0, 0, 0.05)" : "1px solid rgba(255, 255, 255, 0.2)",
-      }}
-      className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center py-1.5 rounded-full transition-all duration-500 ease-in-out"
-    >
-      {navLinks.map((link) => (
-        <Link 
-          key={link.name} 
-          href={link.href} 
-          className={`px-5 py-2 text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-500 rounded-full relative group ${
-            isScrolled ? "text-gray-900" : "text-white"
-          }`}
-        >
-          {/* Sliding Red Hover Effect */}
-          <motion.span 
-            className="absolute inset-0 bg-[#d11a2a] rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100"
-          />
-          <span className="relative z-10 group-hover:text-white transition-colors">
-            {link.name}
-          </span>
-        </Link>
-      ))}
-    </motion.div>
+    const LOGO_RED = "https://disruptivesolutionsinc.com/wp-content/uploads/2025/08/DISRUPTIVE-LOGO-red-scaled.png";
+    const LOGO_WHITE = "https://disruptivesolutionsinc.com/wp-content/uploads/2025/08/DISRUPTIVE-LOGO-white-scaled.png";
 
-    {/* RIGHT SIDE BUTTON */}
-    <div className="hidden lg:block">
-      <motion.div animate={{ scale: isScrolled ? 0.9 : 1 }}>
-        <Link 
-          href="/quote" 
-          className={`px-7 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all duration-500 shadow-xl ${
-            isScrolled 
-              ? "bg-[#d11a2a] text-white shadow-red-500/20" 
-              : "bg-white text-gray-900"
-          }`}
-        >
-          Free Quote
-        </Link>
-      </motion.div>
-    </div>
+    const navLinks = [
+        { name: "Home", href: "/" },
+        { name: "Product & Solutions", href: "/lighting-products-smart-solutions" },
+        { name: "Brands", href: "/trusted-technology-brands" },
+        { name: "Contact Us", href: "/contact-us" },
+    ];
 
-    {/* MOBILE TOGGLE ICON */}
-    <button className="lg:hidden p-2" onClick={() => setIsNavOpen(true)}>
-      <Menu className={isScrolled ? "text-gray-900" : "text-white"} size={28} />
-    </button>
-  </div>
-</nav>
+    const socials = [
+        { icon: Facebook, href: "#", color: "hover:bg-[#1877F2]" },
+        { icon: Instagram, href: "#", color: "hover:bg-[#E4405F]" },
+        { icon: Linkedin, href: "#", color: "hover:bg-[#0A66C2]" },
+    ];
 
-      {/* --- 2. HERO SECTION --- */}
-      <section className="relative pt-44 pb-32 bg-[#0a0a0a] overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-        <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-          <motion.h1 
-            initial={{ opacity: 0, y: 30 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            className="text-white text-6xl md:text-8xl font-black uppercase tracking-tighter leading-[0.85] mb-8"
-          >
-            Connect <br /> with <span className="text-[#d11a2a]">Expertise.</span>
-          </motion.h1>
-          <p className="text-gray-400 max-w-xl mx-auto text-lg font-medium">Ready to light up your next project? Our engineers and designers are one message away.</p>
-        </div>
-      </section>
+    // --- EFFECTS ---
+    useEffect(() => {
+        const handleScroll = () => setIsScrolled(window.scrollY > 50);
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
 
-      {/* --- 3. CONTACT FORM SECTION HERO BLOCK --- */}
-      <section className="relative z-20 -mt-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          
-          {/* HERO CARDS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
-            {[
-              { title: "Quick Response", desc: "Replies within 24 hours", icon: Sparkles },
-              { title: "Direct Line", desc: "Speak with our engineers", icon: Phone },
-              { title: "Global Reach", desc: "Supporting projects worldwide", icon: MapPin },
-            ].map((item, i) => (
-              <motion.div key={i} whileHover={{ y: -5 }} className="bg-white p-8 rounded-[32px] shadow-xl border border-gray-100 flex items-center gap-6">
-                <div className="h-14 w-14 rounded-2xl bg-red-50 flex items-center justify-center text-[#d11a2a]"><item.icon size={28}/></div>
-                <div>
-                  <h4 className="font-black uppercase text-sm text-gray-900 tracking-tight">{item.title}</h4>
-                  <p className="text-xs text-gray-500 font-medium">{item.desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+    // --- HANDLERS ---
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setStatus("loading");
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mb-24">
-            {/* LEFT SIDE: INFO & MAP */}
-            <div className="lg:col-span-4 space-y-8">
-              <div className="bg-gray-50 p-10 rounded-[40px] border border-gray-100">
-                <h3 className="text-2xl font-black uppercase tracking-tight mb-8">Find <span className="text-[#d11a2a]">Us</span></h3>
-                <div className="space-y-6 mb-10">
-                  <div className="flex gap-4">
-                    <Mail className="text-[#d11a2a] shrink-0" size={20} />
-                    <div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</p>
-                        <p className="font-bold text-gray-900">info@disruptive.com</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <Phone className="text-[#d11a2a] shrink-0" size={20} />
-                    <div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Support</p>
-                        <p className="font-bold text-gray-900">0917 527 8819 / 0917 556 1105 </p>
-                    </div>
-                  </div>
-                </div>
+        try {
+            await addDoc(collection(db, "inquiries"), {
+                ...formData,
+                submittedAt: serverTimestamp(),
+                source: "Contact Page"
+            });
+            setStatus("success");
+            setFormData({ fullName: "", email: "", phone: "", message: "" });
+            setTimeout(() => setStatus("idle"), 5000);
+        } catch (error) {
+            console.error("Firebase Error:", error);
+            setStatus("error");
+            setTimeout(() => setStatus("idle"), 5000);
+        }
+    };
 
-                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Follow Our Journey</h4>
-                <div className="flex gap-3">
-                  {socials.map((soc, i) => (
-                    <a 
-                      key={i} 
-                      href={soc.href} 
-                      className={`h-11 w-11 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-200 transition-all duration-300 hover:text-white ${soc.color}`}
+    return (
+        <div className="min-h-screen bg-white font-sans selection:bg-[#d11a2a]/10 selection:text-[#d11a2a]">
+            
+            {/* --- NAVIGATION --- */}
+            <nav className="fixed top-0 left-0 w-full z-[1000] py-4 transition-all duration-500">
+                <motion.div
+                    animate={{
+                        backgroundColor: isScrolled ? "rgba(255, 255, 255, 0.85)" : "rgba(255, 255, 255, 0)",
+                        backdropFilter: isScrolled ? "blur(20px)" : "blur(0px)",
+                        height: isScrolled ? "70px" : "90px",
+                        boxShadow: isScrolled ? "0 10px 30px rgba(0,0,0,0.05)" : "none"
+                    }}
+                    className="absolute inset-0 transition-all duration-500"
+                />
+
+                <div className="max-w-7xl mx-auto px-6 flex items-center justify-between relative z-10 h-full">
+                    <Link href="/">
+                        <motion.img
+                            animate={{ scale: isScrolled ? 0.85 : 1 }}
+                            src={isScrolled ? LOGO_RED : LOGO_WHITE}
+                            alt="Logo"
+                            className="h-10 md:h-12 w-auto object-contain transition-all duration-500"
+                        />
+                    </Link>
+
+                    {/* Desktop Menu */}
+                    <motion.div
+                        animate={{
+                            gap: isScrolled ? "4px" : "12px",
+                            backgroundColor: isScrolled ? "rgba(0, 0, 0, 0.03)" : "rgba(255, 255, 255, 0.1)",
+                            padding: "6px"
+                        }}
+                        className="hidden lg:flex items-center rounded-full border border-white/20 transition-all"
                     >
-                      <soc.icon size={18} />
-                    </a>
-                  ))}
-                </div>
-              </div>
+                        {navLinks.map((link) => (
+                            <Link key={link.name} href={link.href} className={`px-5 py-2 text-[11px] font-black uppercase tracking-widest rounded-full relative group transition-colors ${isScrolled ? "text-gray-900" : "text-white"}`}>
+                                <span className="relative z-10 group-hover:text-white">{link.name}</span>
+                                <motion.span className="absolute inset-0 bg-[#d11a2a] rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100" />
+                            </Link>
+                        ))}
+                    </motion.div>
 
-<Map center={[14.6053, 121.0527]}>
-    <MapTileLayer />
-    <MapZoomControl />
-    <MapMarker position={[14.6019, 121.0590]}>
-        <MapPopup>
-          <div className="p-2">
-            <h3 className="font-black text-[#d11a2a] uppercase text-xs">Primex Tower</h3>
-            <p className="text-[10px] text-gray-500">EDSA, San Juan, Metro Manila</p>
-          </div>
-        </MapPopup>
-    </MapMarker>
-</Map>
-            </div>
+                    <div className="flex items-center gap-4">
+                        <Link href="/quote" className={`hidden md:block px-8 py-3 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${isScrolled ? "bg-[#d11a2a] text-white" : "bg-white text-gray-900 hover:bg-[#d11a2a] hover:text-white"}`}>
+                            Free Quote
+                        </Link>
+                        <button onClick={() => setIsNavOpen(true)} className="lg:hidden text-white mix-blend-difference">
+                            <Menu size={28} />
+                        </button>
+                    </div>
+                </div>
+            </nav>
 
-            {/* RIGHT SIDE: FORM */}
-            <div className="lg:col-span-8 bg-white p-8 md:p-14 rounded-[50px] shadow-[0_40px_100px_rgba(0,0,0,0.06)] border border-gray-50">
-              <form className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="md:col-span-2">
-                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-3 block ml-2">Full Name</label>
-                  <input type="text" placeholder="" className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#d11a2a]/20 outline-none transition-all font-bold" />
+            {/* --- HERO SECTION --- */}
+            <section className="relative pt-52 pb-40 bg-[#0a0a0a] overflow-hidden">
+                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-900/20 via-transparent to-transparent" />
+                <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
+                    <motion.h1 
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-white text-6xl md:text-9xl font-black uppercase tracking-tighter leading-[0.8] mb-8"
+                    >
+                        Connect <br /> with <span className="text-[#d11a2a] italic">Expertise.</span>
+                    </motion.h1>
+                    <p className="text-gray-400 max-w-2xl mx-auto text-lg font-medium leading-relaxed">
+                        Ready to disrupt the standard? Our engineers and design specialists are ready to turn your vision into a high-performance reality.
+                    </p>
                 </div>
-                <div>
-                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-3 block ml-2">Email Address</label>
-                  <input type="email" placeholder="" className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#d11a2a]/20 outline-none transition-all font-bold" />
+            </section>
+
+            {/* --- CONTACT BLOCK --- */}
+            <section className="relative z-20 -mt-24 px-6 pb-24">
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                        
+                        {/* Left: Info & Map */}
+                        <div className="lg:col-span-4 space-y-6">
+                            <div className="bg-white p-10 rounded-[40px] shadow-2xl border border-gray-100">
+                                <h3 className="text-2xl font-black uppercase mb-8">Quick <span className="text-[#d11a2a]">Contacts</span></h3>
+                                <div className="space-y-6 mb-10">
+                                    <div className="flex gap-4 group cursor-pointer">
+                                        <div className="h-12 w-12 rounded-2xl bg-red-50 flex items-center justify-center text-[#d11a2a] group-hover:bg-[#d11a2a] group-hover:text-white transition-all"><Mail size={20} /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Email Us</p>
+                                            <p className="font-bold text-gray-900">info@disruptivesolutionsinc.com</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-4 group cursor-pointer">
+                                        <div className="h-12 w-12 rounded-2xl bg-red-50 flex items-center justify-center text-[#d11a2a] group-hover:bg-[#d11a2a] group-hover:text-white transition-all"><Phone size={20} /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Direct Line</p>
+                                            <p className="font-bold text-gray-900">+63 917 527 8819</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-4 group cursor-pointer">
+                                        <div className="h-12 w-12 rounded-2xl bg-red-50 flex items-center justify-center text-[#d11a2a] group-hover:bg-[#d11a2a] group-hover:text-white transition-all"><MapPin size={20} /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Headquarters</p>
+                                            <p className="font-bold text-gray-900 leading-tight">Primex Tower, EDSA, <br/>San Juan, Metro Manila</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    {socials.map((soc, i) => (
+                                        <a key={i} href={soc.href} className={`h-11 w-11 rounded-full bg-gray-50 flex items-center justify-center transition-all hover:text-white ${soc.color}`}><soc.icon size={18} /></a>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="h-[400px] rounded-[40px] overflow-hidden border-8 border-white shadow-2xl relative">
+                                <Map center={[14.6019, 121.0590]} zoom={15} scrollWheelZoom={false}>
+                                    <MapTileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+                                    <MapMarker position={[14.6019, 121.0590]}>
+                                        <MapPopup>Disruptive Solutions HQ</MapPopup>
+                                    </MapMarker>
+                                </Map>
+                            </div>
+                        </div>
+
+                        {/* Right: Modern Form */}
+                        <div className="lg:col-span-8 bg-white p-8 md:p-16 rounded-[50px] shadow-[0_50px_100px_rgba(0,0,0,0.08)] border border-gray-50">
+                            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="md:col-span-2">
+                                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-3 block ml-2">Full Name</label>
+                                    <input 
+                                        required
+                                        value={formData.fullName}
+                                        onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                                        type="text" 
+                                        placeholder="John Doe" 
+                                        className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#d11a2a]/20 outline-none transition-all font-bold" 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-3 block ml-2">Email Address</label>
+                                    <input 
+                                        required
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                        type="email" 
+                                        placeholder="john@company.com" 
+                                        className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#d11a2a]/20 outline-none transition-all font-bold" 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-3 block ml-2">Phone Number</label>
+                                    <input 
+                                        value={formData.phone}
+                                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                        type="tel" 
+                                        placeholder="+63 900 000 0000" 
+                                        className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#d11a2a]/20 outline-none transition-all font-bold" 
+                                    />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-3 block ml-2">Project Brief</label>
+                                    <textarea 
+                                        required
+                                        value={formData.message}
+                                        onChange={(e) => setFormData({...formData, message: e.target.value})}
+                                        rows={6} 
+                                        placeholder="Describe your lighting project or smart solution requirements..." 
+                                        className="w-full bg-gray-50 border-none rounded-[32px] px-6 py-4 focus:ring-2 focus:ring-[#d11a2a]/20 outline-none transition-all font-bold resize-none"
+                                    ></textarea>
+                                </div>
+                                
+                                <div className="md:col-span-2">
+                                    <motion.button
+                                        disabled={status === "loading"}
+                                        whileHover={{ scale: 1.01 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        type="submit"
+                                        className={`w-full py-5 rounded-2xl font-black uppercase tracking-[0.3em] text-xs shadow-2xl flex items-center justify-center gap-4 transition-all
+                                            ${status === "success" ? "bg-green-600 shadow-green-500/30" : 
+                                              status === "error" ? "bg-black" : "bg-[#d11a2a] shadow-red-500/30"} text-white`}
+                                    >
+                                        {status === "loading" ? "Processing..." : 
+                                         status === "success" ? "Message Sent!" : 
+                                         status === "error" ? "Try Again" : "Send Proposal"} 
+                                        <Send size={16} />
+                                    </motion.button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-3 block ml-2">Confirm Email</label>
-                  <input type="email" placeholder="" className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#d11a2a]/20 outline-none transition-all font-bold" />
+            </section>
+
+            {/* --- FOOTER --- */}
+            <footer className="bg-[#0a0a0a] text-white pt-32 pb-12">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-24">
+                        <div className="space-y-8">
+                            <img src={LOGO_WHITE} alt="Logo" className="h-10" />
+                            <p className="text-gray-500 text-sm leading-relaxed">
+                                Redefining the future of illumination through engineering excellence and disruptive innovation.
+                            </p>
+                        </div>
+                        <div className="space-y-6">
+                            <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-[#d11a2a]">Navigation</h4>
+                            <ul className="space-y-4">
+                                {navLinks.map((link) => (
+                                    <li key={link.name}>
+                                        <Link href={link.href} className="text-gray-400 text-sm hover:text-white transition-colors flex items-center gap-2 group">
+                                            <span className="h-px w-0 bg-[#d11a2a] group-hover:w-4 transition-all" /> {link.name}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="md:col-span-2 bg-white/5 p-10 rounded-[40px] border border-white/10">
+                            <h4 className="text-xl font-black uppercase mb-4 italic">Join the Disruption</h4>
+                            <p className="text-gray-400 text-sm mb-8">Get the latest on smart lighting tech and engineering breakthroughs.</p>
+                            <div className="flex bg-black/50 p-2 rounded-2xl border border-white/10">
+                                <input type="email" placeholder="Email Address" className="bg-transparent flex-1 px-4 outline-none text-sm" />
+                                <button className="bg-[#d11a2a] p-3 rounded-xl hover:bg-white hover:text-black transition-all"><ArrowRight size={20} /></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="pt-12 border-t border-white/5 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-500">
+                        <p>© 2026 Disruptive Solutions Inc.</p>
+                        <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="flex items-center gap-2 hover:text-white transition-all">Top <ChevronUp size={14} /></button>
+                    </div>
                 </div>
-                <div className="md:col-span-2">
-                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-3 block ml-2">Phone Number</label>
-                  <input type="tel" placeholder="+63" className="w-full bg-gray-50 border-none rounded-2xl px-6 py-4 focus:ring-2 focus:ring-[#d11a2a]/20 outline-none transition-all font-bold" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-3 block ml-2">Project Message</label>
-                  <textarea rows={5} placeholder="Tell us about your disruption..." className="w-full bg-gray-50 border-none rounded-[32px] px-6 py-4 focus:ring-2 focus:ring-[#d11a2a]/20 outline-none transition-all font-bold resize-none"></textarea>
-                </div>
-                <div className="md:col-span-2">
-                  <motion.button 
-                    whileHover={{ scale: 1.01 }} 
-                    whileTap={{ scale: 0.98 }} 
-                    className="w-full bg-[#d11a2a] text-white py-5 rounded-2xl font-black uppercase tracking-[0.3em] text-xs shadow-2xl shadow-red-500/30 flex items-center justify-center gap-4"
-                  >
-                    Send Proposal <Send size={16} />
-                  </motion.button>
-                </div>
-              </form>
-            </div>
-          </div>
+            </footer>
         </div>
-      </section>
-
-     {/* --- 5. MODERN FOOTER (ENHANCED & ALIGNED) --- */}
-<footer className="bg-[#0a0a0a] text-white pt-24 pb-12">
-  <div className="max-w-7xl mx-auto px-6">
-
-    {/* TOP GRID */}
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-20 items-start">
-
-      {/* BRAND COLUMN */}
-      <div className="space-y-8">
-        <img src={LOGO_WHITE} alt="Logo" className="h-12" />
-
-        <p className="text-gray-500 text-sm leading-relaxed max-w-sm">
-          The leading edge of lighting technology. Disrupting the standard to
-          build a brighter, smarter world.
-        </p>
-
-        <div className="flex gap-4">
-          {socials.map((soc, i) => (
-            <div
-              key={i}
-              className={`
-                h-10 w-10 rounded-full
-                bg-white/5 border border-white/10
-                flex items-center justify-center
-                cursor-pointer
-                transition-all duration-300
-                hover:bg-white/10 hover:-translate-y-1
-                ${soc.color}
-              `}
-            >
-              <soc.icon size={18} />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* QUICK LINKS */}
-      <div className="space-y-6">
-        <h4 className="text-[11px] font-black uppercase tracking-[0.25em] text-[#d11a2a]">
-          Quick Links
-        </h4>
-
-        <ul className="space-y-4">
-          {footerLinks.map((link) => (
-            <li key={link.name}>
-              <Link
-                href={link.href}
-                className="
-                  text-gray-400 text-sm
-                  flex items-center gap-2
-                  hover:text-white
-                  transition-colors
-                  group
-                "
-              >
-                <span className="h-[2px] w-0 bg-[#d11a2a] group-hover:w-3 transition-all" />
-                {link.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* NEWSLETTER / INSIGHTS */}
-      <div className="md:col-span-2 bg-white/5 backdrop-blur-xl rounded-[32px] p-10 border border-white/10 shadow-xl flex flex-col justify-between">
-        <div>
-          <h4 className="text-xl font-black uppercase tracking-tight mb-3">
-            Industry Insights
-          </h4>
-
-          <p className="text-gray-400 text-sm leading-relaxed mb-6 max-w-md">
-            Receive curated updates on smart lighting innovations, engineering
-            breakthroughs, and industry best practices — delivered straight to
-            your inbox.
-          </p>
-
-          <div className="flex items-center gap-2 bg-black/40 p-2 rounded-2xl border border-white/10">
-            <input
-              type="email"
-              placeholder="Enter your business email"
-              className="
-                bg-transparent flex-1 px-4 py-2
-                text-sm text-white
-                placeholder:text-gray-500
-                outline-none
-              "
-            />
-
-            <button
-              className="
-                group flex items-center gap-2
-                bg-[#d11a2a] px-4 py-3 rounded-xl
-                hover:bg-[#b11422]
-                transition-all duration-300
-                shadow-lg
-              "
-            >
-              <span className="hidden md:block text-[10px] font-black uppercase tracking-widest">
-                Subscribe
-              </span>
-              <ArrowRight
-                size={18}
-                className="group-hover:translate-x-1 transition-transform"
-              />
-            </button>
-          </div>
-        </div>
-
-        <p className="text-[10px] text-gray-500 mt-4">
-          We respect your privacy. No spam, unsubscribe anytime.
-        </p>
-      </div>
-    </div>
-
-    {/* BOTTOM BAR */}
-    <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-bold text-gray-500 tracking-[0.25em] uppercase">
-      <p>© 2026 Disruptive Solutions Inc.</p>
-
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="
-          flex items-center gap-2
-          hover:text-[#d11a2a]
-          transition-all
-        "
-      >
-        Top <ChevronUp size={16} />
-      </button>
-    </div>
-
-  </div>
-</footer>
-
-    </div>
-  );
+    );
 }

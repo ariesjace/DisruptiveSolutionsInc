@@ -152,9 +152,7 @@ export function AllProducts() {
           <h2 className="text-2xl font-black uppercase italic tracking-tighter text-gray-900">Inventory</h2>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Manage your product database</p>
         </div>
-        <Button className="bg-[#d11a2a] hover:bg-red-700 rounded-full px-6 text-[10px] font-black uppercase tracking-widest">
-          Add New Product
-        </Button>
+
       </div>
 
       {/* --- FILTERS --- */}
