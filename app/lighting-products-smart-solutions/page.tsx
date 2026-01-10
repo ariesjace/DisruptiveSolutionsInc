@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, where } from "firebase/firestore";
 import {
   Menu,
   Search,
@@ -27,6 +27,8 @@ export default function BrandsPage() {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [quoteCart, setQuoteCart] = useState<any[]>([]);
+  const [activeFilter, setActiveFilter] = useState<"All" | "LIT" | "ZUMTOBEL">("All");
+
 
   const LOGO_RED =
     "https://disruptivesolutionsinc.com/wp-content/uploads/2025/08/DISRUPTIVE-LOGO-red-scaled.png";
@@ -79,23 +81,40 @@ export default function BrandsPage() {
   }, [syncCart]);
 
   // --- FETCH PRODUCTS ---
-  useEffect(() => {
-    const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setProducts(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
+useEffect(() => {
+  const q = query(
+    collection(db, "products"),
+    where("website", "==", "Disruptive"),
+    orderBy("createdAt", "desc")
+  );
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    setProducts(snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })));
+    setLoading(false);
+  });
+
+  return () => unsubscribe();
+}, []);
+
 
   // --- FILTER PRODUCTS: ONLY WEBSITES = "Disruptive" ---
   const filteredProducts = products.filter((p) => {
-    const matchesWebsite = p.websites === "Disruptive";
-    const matchesSearch = p.name
-      ?.toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    return matchesWebsite && matchesSearch;
-  });
+  const matchesSearch = p.name
+    ?.toLowerCase()
+    .includes(searchQuery.toLowerCase());
+
+  const matchesBrand =
+    activeFilter === "All"
+      ? true
+      : p.brands?.includes(activeFilter);
+
+  return matchesSearch && matchesBrand;
+});
+
+
 
   // --- CART ACTIONS ---
   const addToQuote = (product: any) => {
@@ -245,39 +264,51 @@ export default function BrandsPage() {
       </section>
 
       {/* --- SEARCH --- */}
-      <section className="py-10 px-6 bg-white border-b border-gray-100">
-        <div className="max-w-5xl mx-auto">
-          <div className="relative max-w-xl mx-auto">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-              size={18}
-            />
-            <input
-              type="text"
-              placeholder="Search a product..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-6 py-3.5 rounded-2xl bg-gray-50 border border-transparent focus:bg-white focus:border-gray-200 focus:outline-none transition-all text-sm"
-            />
-          </div>
-        </div>
-      </section>
+     <section className="py-10 px-6 bg-white border-b border-gray-100">
+  <div className="max-w-5xl mx-auto space-y-8">
+    <div className="relative max-w-xl mx-auto">
+      <Search
+        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+        size={18}
+      />
+      <input
+        type="text"
+        placeholder="Search a product..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full pl-12 pr-6 py-3.5 rounded-2xl bg-gray-50 border border-transparent focus:bg-white focus:border-gray-200 focus:outline-none transition-all text-sm"
+      />
+    </div>
+
+    <div className="flex flex-wrap justify-center gap-3">
+      {["All", "LIT", "ZUMTOBEL"].map((tab) => (
+        <button
+          key={tab}
+          onClick={() => setActiveFilter(tab as any)}
+          className={`px-8 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${
+            activeFilter === tab
+              ? "bg-[#d11a2a] text-white shadow-lg"
+              : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+          }`}
+        >
+          {tab}
+        </button>
+      ))}
+    </div>
+  </div>
+</section>
+
 
       {/* --- PRODUCT GRID --- */}
-      <section className="py-12 px-6 bg-white">
-        <div className="max-w-6xl mx-auto">
+       <section className="py-12 px-6 bg-white">
+        <div className="max-w-6xl mx-auto"> 
           {loading ? (
-            <div className="flex justify-center py-20">
-              <Loader2 className="w-10 h-10 animate-spin text-[#d11a2a]" />
-            </div>
+            <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-[#d11a2a]" /></div>
           ) : (
-            <motion.div
-              layout
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8"
-            >
-              <AnimatePresence mode="popLayout">
+            <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+              <AnimatePresence mode='popLayout'>
                 {filteredProducts.map((product) => (
-                  <motion.div
+                  <motion.div 
                     key={product.id}
                     layout
                     initial={{ opacity: 0 }}
@@ -285,16 +316,11 @@ export default function BrandsPage() {
                     exit={{ opacity: 0 }}
                     className="group flex flex-col bg-white rounded-3xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-500"
                   >
-                    <Link
-                      href={`/lighting-products-smart-solutions/${product.id}`}
-                    >
+                    <Link href={`/lighting-products-smart-solutions/${product.id}`}>
                       <div className="relative h-[250px] w-full bg-[#f8fafc] p-8 overflow-hidden cursor-pointer">
-                        <img
-                          src={
-                            product.mainImage ||
-                            "https://via.placeholder.com/400"
-                          }
-                          className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
+                        <img 
+                          src={product.mainImage || "https://via.placeholder.com/400"} 
+                          className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105" 
                           alt={product.name}
                         />
                         <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -304,10 +330,7 @@ export default function BrandsPage() {
                         </div>
                         <div className="absolute top-4 left-4 flex flex-wrap gap-1">
                           {product.brands?.map((brand: string) => (
-                            <span
-                              key={brand}
-                              className="px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-sm border border-gray-100 text-[7px] font-black uppercase tracking-widest text-gray-900"
-                            >
+                            <span key={brand} className="px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-sm border border-gray-100 text-[7px] font-black uppercase tracking-widest text-gray-900">
                               {brand}
                             </span>
                           ))}
@@ -317,9 +340,7 @@ export default function BrandsPage() {
 
                     <div className="p-5 flex flex-col flex-1 bg-white">
                       <div className="mb-4">
-                        <Link
-                          href={`/lighting-products-smart-solutions/${product.id}`}
-                        >
+                        <Link href={`/lighting-products-smart-solutions/${product.id}`}>
                           <h3 className="text-[12px] font-black text-gray-900 uppercase tracking-tight leading-snug line-clamp-2 min-h-[35px] hover:text-[#d11a2a] transition-colors cursor-pointer">
                             {product.name}
                           </h3>
@@ -328,22 +349,16 @@ export default function BrandsPage() {
                           SKU: {product.sku || "N/A"}
                         </p>
                       </div>
-
-                      <button
+                      
+                      <button 
                         onClick={() => addToQuote(product)}
                         className={`mt-auto w-full py-3 text-[8px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${
-                          quoteCart.find((item) => item.id === product.id)
-                            ? "bg-green-50 text-green-600 cursor-default"
-                            : "bg-gray-900 text-white hover:bg-[#d11a2a]"
+                          quoteCart.find(item => item.id === product.id)
+                          ? "bg-green-50 text-green-600 cursor-default"
+                          : "bg-gray-900 text-white hover:bg-[#d11a2a]"
                         }`}
                       >
-                        {quoteCart.find((item) => item.id === product.id) ? (
-                          "In Your Quote"
-                        ) : (
-                          <>
-                            <Plus size={12} /> Add to Quote
-                          </>
-                        )}
+                        {quoteCart.find(item => item.id === product.id) ? "In Your Quote" : <><Plus size={12} /> Add to Quote</>}
                       </button>
                     </div>
                   </motion.div>
